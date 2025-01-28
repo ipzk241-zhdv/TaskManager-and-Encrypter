@@ -14,9 +14,20 @@ namespace WinFormsApp1
         public TaskManager()
         {
             InitializeComponent();
-
             this.CenterToScreen();
 
+            InitializeListView();
+            InitializeImageLists();
+            InitializeContextMenu();
+
+            this.Controls.Add(listView);
+            currentProcesses = new Dictionary<int, ProcessInfo>();
+
+            Task.Run(() => PeriodicProcessUpdate());
+        }
+
+        private void InitializeListView()
+        {
             listView = new ListView
             {
                 Dock = DockStyle.Fill,
@@ -35,54 +46,63 @@ namespace WinFormsApp1
             listView.Columns.Add("Priority", 150);
             listView.Columns.Add("ThreadsNumber", 170);
 
-            // Set up ImageList for icons
-            icons = new ImageList();
-            icons.ImageSize = new Size(32, 32);
-            imageList = new ImageList();
-            imageList.ImageSize = new Size(26, 26);
-            imageList.Images.Add("empty", new Bitmap(1, 1));
-
-            string exePath = AppDomain.CurrentDomain.BaseDirectory;
-            string[] imagePathes = [
-                Path.Combine(exePath, "expand.png"),
-                Path.Combine(exePath, "expand_hover.png"),
-                Path.Combine(exePath, "collapse.png"),
-                Path.Combine(exePath, "collapse_hover.png"),
-                ];
-
-            imageList.Images.Add("expand", Image.FromFile(imagePathes[0]));
-            imageList.Images.Add("expand_hover", Image.FromFile(imagePathes[1])); // Regular expand icon
-            imageList.Images.Add("collapse", Image.FromFile(imagePathes[2])); // Highlighted expand icon
-            imageList.Images.Add("collapse_hover", Image.FromFile(imagePathes[3])); // Regular collapse icon
-
-
-            listView.SmallImageList = icons;
-            listView.StateImageList = imageList;
-
             listView.MouseClick += OnListViewMouseClick;
             listView.MouseMove += OnListViewMouseMove;
             listView.ItemCheck += OnItemChecked;
             listView.MouseUp += OnListViewMouseUp;
+        }
 
-            this.Controls.Add(listView);
+        private void InitializeImageLists()
+        {
+            icons = new ImageList
+            {
+                ImageSize = new Size(32, 32)
+            };
 
+            imageList = new ImageList
+            {
+                ImageSize = new Size(26, 26)
+            };
+            imageList.Images.Add("empty", new Bitmap(1, 1));
+
+            string exePath = AppDomain.CurrentDomain.BaseDirectory;
+            string[] imagePaths = new[]
+            {
+        Path.Combine(exePath, "expand.png"),
+        Path.Combine(exePath, "expand_hover.png"),
+        Path.Combine(exePath, "collapse.png"),
+        Path.Combine(exePath, "collapse_hover.png")
+    };
+
+            imageList.Images.Add("expand", Image.FromFile(imagePaths[0]));
+            imageList.Images.Add("expand_hover", Image.FromFile(imagePaths[1]));
+            imageList.Images.Add("collapse", Image.FromFile(imagePaths[2]));
+            imageList.Images.Add("collapse_hover", Image.FromFile(imagePaths[3]));
+
+            listView.SmallImageList = icons;
+            listView.StateImageList = imageList;
+        }
+
+        private void InitializeContextMenu()
+        {
             contextMenu = new ContextMenuStrip();
+
             var executeProcessMenuItem = new ToolStripMenuItem("Новий процес", null, ExecuteProcess);
             var endProcessMenuItem = new ToolStripMenuItem("Завершити процес", null, OnEndProcessClicked);
             var changePriorityMenuItem = new ToolStripMenuItem("Змінити пріоритет");
 
-            // Масив пар тексту та відповідного пріоритету
+            // Array of priority items
             var priorityItems = new (string Text, ProcessPriorityClass Priority)[]
             {
-                ("Реального часу", ProcessPriorityClass.RealTime),
-                ("Високий", ProcessPriorityClass.High),
-                ("Вище середнього", ProcessPriorityClass.AboveNormal),
-                ("Середній", ProcessPriorityClass.Normal),
-                ("Нижче середнього", ProcessPriorityClass.BelowNormal),
-                ("Низький", ProcessPriorityClass.Idle)
+        ("Реального часу", ProcessPriorityClass.RealTime),
+        ("Високий", ProcessPriorityClass.High),
+        ("Вище середнього", ProcessPriorityClass.AboveNormal),
+        ("Середній", ProcessPriorityClass.Normal),
+        ("Нижче середнього", ProcessPriorityClass.BelowNormal),
+        ("Низький", ProcessPriorityClass.Idle)
             };
 
-            // Створення пунктів меню динамічно
+            // Create menu items dynamically
             foreach (var (text, priority) in priorityItems)
             {
                 var menuItem = new ToolStripMenuItem(text, null, (sender, e) => OnChangePriorityClicked(sender, e, priority));
@@ -92,11 +112,8 @@ namespace WinFormsApp1
             contextMenu.Items.Add(executeProcessMenuItem);
             contextMenu.Items.Add(endProcessMenuItem);
             contextMenu.Items.Add(changePriorityMenuItem);
-
-            currentProcesses = new Dictionary<int, ProcessInfo>();
-
-            Task.Run(() => PeriodicProcessUpdate());
         }
+
         private async void PeriodicProcessUpdate()
         {
             while (true)
@@ -422,7 +439,6 @@ namespace WinFormsApp1
                 {
                     { "winword.exe", @"D:\Tools\Office\OFFICE\root\Office16\WINWORD.EXE" },
                     { "excel.exe", @"D:\Tools\Office\OFFICE\root\Office16\EXCEL.EXE" },
-                    // Додайте інші програми, якщо потрібно
                 };
 
                     try
