@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using TaskManager;
 
 namespace WinFormsApp1
 {
@@ -14,6 +15,7 @@ namespace WinFormsApp1
         public TaskManager()
         {
             InitializeComponent();
+
             this.CenterToScreen();
 
             InitializeListView();
@@ -21,6 +23,7 @@ namespace WinFormsApp1
             InitializeContextMenu();
 
             this.Controls.Add(listView);
+
             currentProcesses = new Dictionary<int, ProcessInfo>();
 
             Task.Run(() => PeriodicProcessUpdate());
@@ -39,12 +42,10 @@ namespace WinFormsApp1
                 CheckBoxes = true,
             };
 
-            // Add columns
-            listView.Columns.Add("Process", 300);
-            listView.Columns.Add("RAM", 150);
-            listView.Columns.Add("StartTime", 230);
-            listView.Columns.Add("Priority", 150);
-            listView.Columns.Add("ThreadsNumber", 170);
+            foreach (var (header, width) in Config.ColumnsConfig)
+            {
+                listView.Columns.Add(header, width);
+            }
 
             listView.MouseClick += OnListViewMouseClick;
             listView.MouseMove += OnListViewMouseMove;
@@ -65,19 +66,10 @@ namespace WinFormsApp1
             };
             imageList.Images.Add("empty", new Bitmap(1, 1));
 
-            string exePath = AppDomain.CurrentDomain.BaseDirectory;
-            string[] imagePaths = new[]
+            foreach (var (key, path) in Config.ImagePaths)
             {
-        Path.Combine(exePath, "expand.png"),
-        Path.Combine(exePath, "expand_hover.png"),
-        Path.Combine(exePath, "collapse.png"),
-        Path.Combine(exePath, "collapse_hover.png")
-    };
-
-            imageList.Images.Add("expand", Image.FromFile(imagePaths[0]));
-            imageList.Images.Add("expand_hover", Image.FromFile(imagePaths[1]));
-            imageList.Images.Add("collapse", Image.FromFile(imagePaths[2]));
-            imageList.Images.Add("collapse_hover", Image.FromFile(imagePaths[3]));
+                imageList.Images.Add(key, Image.FromFile(path));
+            }
 
             listView.SmallImageList = icons;
             listView.StateImageList = imageList;
@@ -91,19 +83,7 @@ namespace WinFormsApp1
             var endProcessMenuItem = new ToolStripMenuItem("Завершити процес", null, OnEndProcessClicked);
             var changePriorityMenuItem = new ToolStripMenuItem("Змінити пріоритет");
 
-            // Array of priority items
-            var priorityItems = new (string Text, ProcessPriorityClass Priority)[]
-            {
-        ("Реального часу", ProcessPriorityClass.RealTime),
-        ("Високий", ProcessPriorityClass.High),
-        ("Вище середнього", ProcessPriorityClass.AboveNormal),
-        ("Середній", ProcessPriorityClass.Normal),
-        ("Нижче середнього", ProcessPriorityClass.BelowNormal),
-        ("Низький", ProcessPriorityClass.Idle)
-            };
-
-            // Create menu items dynamically
-            foreach (var (text, priority) in priorityItems)
+            foreach (var (text, priority) in Config.PriorityItems)
             {
                 var menuItem = new ToolStripMenuItem(text, null, (sender, e) => OnChangePriorityClicked(sender, e, priority));
                 changePriorityMenuItem.DropDownItems.Add(menuItem);
@@ -448,7 +428,7 @@ namespace WinFormsApp1
                             Process.Start(knownPrograms[userInput.ToLower()]);
                         }
                         else
-                        { 
+                        {
                             Process.Start(userInput);
                         }
                     }
