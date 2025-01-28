@@ -11,6 +11,7 @@ namespace WinFormsApp1
         private Dictionary<int, ProcessInfo> currentProcesses;
         private ListViewItem lastInteractedItem;
         private ContextMenuStrip contextMenu;
+        private int periodicUpdateTimeMs = 1000;
 
         public TaskManager()
         {
@@ -98,7 +99,7 @@ namespace WinFormsApp1
         {
             while (true)
             {
-                await Task.Delay(1000);
+                await Task.Delay(periodicUpdateTimeMs);
                 await Task.Run(() => LoadProcesses());
             }
         }
