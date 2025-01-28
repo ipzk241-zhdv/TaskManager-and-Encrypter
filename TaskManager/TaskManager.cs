@@ -118,8 +118,7 @@ namespace WinFormsApp1
             }
             catch (Exception ex)
             {
-                // Логіка для обробки помилок (наприклад, запис у лог)
-                return Enumerable.Empty<Process>(); // Повертаємо порожній список, якщо виникла помилка
+                return Enumerable.Empty<Process>(); 
             }
         }
 
@@ -160,7 +159,7 @@ namespace WinFormsApp1
             }
             catch
             {
-                return null; // Якщо не вдалося отримати іконку, повертаємо null
+                return null; 
             }
         }
         private void UpdateListView(List<ProcessInfo> newProcesses)
