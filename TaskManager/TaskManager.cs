@@ -105,46 +105,62 @@ namespace WinFormsApp1
         }
         private void LoadProcesses()
         {
-            var processes = new List<ProcessInfo>();
+            var processes = GetProcesses();
+            var processInfos = processes.Select(process => CreateProcessInfo(process)).ToList();
+            Invoke(new MethodInvoker(() => UpdateListView(processInfos)));
+        }
 
-            foreach (var process in Process.GetProcesses())
+        private IEnumerable<Process> GetProcesses()
+        {
+            try
             {
-                try
-                {
-                    var threads = new List<ThreadInfo>();
-                    foreach (ProcessThread thread in process.Threads)
-                    {
-                        threads.Add(new ThreadInfo { Id = thread.Id, State = thread.ThreadState.ToString() });
-                    }
+                return Process.GetProcesses();
+            }
+            catch (Exception ex)
+            {
+                return Enumerable.Empty<Process>(); 
+            }
+        }
 
-                    Icon icon = null;
-                    try
-                    {
-                        icon = Icon.ExtractAssociatedIcon(process.MainModule?.FileName ?? string.Empty);
-                    }
-                    catch
-                    {
-                        // Ignore icon extraction errors
-                    }
+        private ProcessInfo CreateProcessInfo(Process process)
+        {
+            var threads = GetProcessThreads(process);
+            var icon = GetProcessIcon(process);
 
-                    processes.Add(new ProcessInfo
-                    {
-                        Name = process.ProcessName,
-                        Id = process.Id,
-                        Priority = process.PriorityClass.ToString(),
-                        Threads = threads.ToArray(),
-                        RamUsage = process.WorkingSet64,
-                        StartTime = process.StartTime.ToString("G"),
-                        Icon = icon
-                    });
-                }
-                catch
-                {
-                    // Ignore processes that cannot be accessed
-                }
+            return new ProcessInfo
+            {
+                Name = process.ProcessName,
+                Id = process.Id,
+                Priority = process.PriorityClass.ToString(),
+                Threads = threads,
+                RamUsage = process.WorkingSet64,
+                StartTime = process.StartTime.ToString("G"),
+                Icon = icon
+            };
+        }
+
+        private ThreadInfo[] GetProcessThreads(Process process)
+        {
+            var threads = new List<ThreadInfo>();
+
+            foreach (ProcessThread thread in process.Threads)
+            {
+                threads.Add(new ThreadInfo { Id = thread.Id, State = thread.ThreadState.ToString() });
             }
 
-            Invoke(new MethodInvoker(() => UpdateListView(processes)));
+            return threads.ToArray();
+        }
+
+        private Icon GetProcessIcon(Process process)
+        {
+            try
+            {
+                return Icon.ExtractAssociatedIcon(process.MainModule?.FileName ?? string.Empty);
+            }
+            catch
+            {
+                return null; 
+            }
         }
         private void UpdateListView(List<ProcessInfo> newProcesses)
         {
