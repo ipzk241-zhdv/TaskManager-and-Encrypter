@@ -80,9 +80,9 @@ namespace WinFormsApp1
         {
             contextMenu = new ContextMenuStrip();
 
-            var executeProcessMenuItem = new ToolStripMenuItem("Новий процес", null, ExecuteProcess);
-            var endProcessMenuItem = new ToolStripMenuItem("Завершити процес", null, OnEndProcessClicked);
-            var changePriorityMenuItem = new ToolStripMenuItem("Змінити пріоритет");
+            var executeProcessMenuItem = new ToolStripMenuItem("ГЌГ®ГўГЁГ© ГЇГ°Г®Г¶ГҐГ±", null, ExecuteProcess);
+            var endProcessMenuItem = new ToolStripMenuItem("Г‡Г ГўГҐГ°ГёГЁГІГЁ ГЇГ°Г®Г¶ГҐГ±", null, OnEndProcessClicked);
+            var changePriorityMenuItem = new ToolStripMenuItem("Г‡Г¬ВіГ­ГЁГІГЁ ГЇГ°ВіГ®Г°ГЁГІГҐГІ");
 
             foreach (var (text, priority) in Config.PriorityItems)
             {
@@ -173,36 +173,11 @@ namespace WinFormsApp1
             {
                 if (currentProcesses.TryGetValue(process.Id, out var existingProcess))
                 {
-                    // Update if different
-                    var item = listView.Items.Cast<ListViewItem>().FirstOrDefault(i => i.Tag is ProcessInfo pi && pi.Id == process.Id);
-                    if (item != null)
-                    {
-                        item.SubItems[1].Text = (process.RamUsage / 1024 / 1024).ToString("N0") + " MB";
-                        item.SubItems[2].Text = process.StartTime;
-                        item.SubItems[3].Text = process.Priority.ToString();
-                        item.SubItems[4].Text = process.Threads.Length.ToString();
-                    }
+                    UpdateProcess(process);
                 }
                 else
                 {
-                    // Add new process
-                    var item = new ListViewItem(process.Name)
-                    {
-                        Tag = process,
-                        StateImageIndex = 1,
-                    };
-                    item.SubItems.Add((process.RamUsage / 1024 / 1024).ToString("N0") + " MB");
-                    item.SubItems.Add(process.StartTime);
-                    item.SubItems.Add(process.Priority.ToString());
-                    item.SubItems.Add(process.Threads.Length.ToString());
-
-                    if (process.Icon != null)
-                    {
-                        icons.Images.Add(process.Id.ToString(), process.Icon);
-                        item.ImageKey = process.Id.ToString();
-                    }
-
-                    listView.Items.Add(item);
+                    AddProcess(process);
                 }
             }
 
@@ -219,6 +194,42 @@ namespace WinFormsApp1
 
             listView.EndUpdate();
         }
+
+        private void AddTextToItem(ListViewItem item, ProcessInfo? process)
+        {
+            item.SubItems[1].Text = (process.RamUsage / 1024 / 1024).ToString("N0") + " MB";
+            item.SubItems[2].Text = process.StartTime;
+            item.SubItems[3].Text = process.Priority.ToString();
+            item.SubItems[4].Text = process.Threads.Length.ToString();
+        }
+
+        private void UpdateProcess(ProcessInfo? process)
+        {
+            var item = listView.Items.Cast<ListViewItem>().FirstOrDefault(i => i.Tag is ProcessInfo pi && pi.Id == process.Id);
+            if (item != null)
+            {
+                AddTextToItem(item, process);
+            }
+        }
+
+        private void AddProcess(ProcessInfo? process)
+        {
+            var item = new ListViewItem(process.Name)
+            {
+                Tag = process,
+                StateImageIndex = 1,
+            };
+            AddTextToItem(item, process);
+
+            if (process.Icon != null)
+            {
+                icons.Images.Add(process.Id.ToString(), process.Icon);
+                item.ImageKey = process.Id.ToString();
+            }
+
+            listView.Items.Add(item);
+        }
+        
         private void OnListViewMouseUp(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right)
@@ -380,7 +391,7 @@ namespace WinFormsApp1
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Не вдалося завершити процес: {ex.Message}", "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"ГЌГҐ ГўГ¤Г Г«Г®Г±Гї Г§Г ГўГҐГ°ГёГЁГІГЁ ГЇГ°Г®Г¶ГҐГ±: {ex.Message}", "ГЏГ®Г¬ГЁГ«ГЄГ ", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
         private void OnChangePriorityClicked(object sender, EventArgs e, ProcessPriorityClass priority)
@@ -420,18 +431,18 @@ namespace WinFormsApp1
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Не вдалося змінити пріоритет: {ex.Message}", "Помилка", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show($"ГЌГҐ ГўГ¤Г Г«Г®Г±Гї Г§Г¬ВіГ­ГЁГІГЁ ГЇГ°ВіГ®Г°ГЁГІГҐГІ: {ex.Message}", "ГЏГ®Г¬ГЁГ«ГЄГ ", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
         private void ExecuteProcess(object sender, EventArgs e)
         {
-            using (var inputDialog = new InputDialog("Запустити процес"))
+            using (var inputDialog = new InputDialog("Г‡Г ГЇГіГ±ГІГЁГІГЁ ГЇГ°Г®Г¶ГҐГ±"))
             {
                 if (inputDialog.ShowDialog() == DialogResult.OK)
                 {
                     string userInput = inputDialog.UserInput;
 
-                    // Список відомих програм і шляхів до них
+                    // Г‘ГЇГЁГ±Г®ГЄ ГўВіГ¤Г®Г¬ГЁГµ ГЇГ°Г®ГЈГ°Г Г¬ Ві ГёГ«ГїГµВіГў Г¤Г® Г­ГЁГµ
                     var knownPrograms = new Dictionary<string, string>
                 {
                     { "winword.exe", @"D:\Tools\Office\OFFICE\root\Office16\WINWORD.EXE" },
@@ -451,7 +462,7 @@ namespace WinFormsApp1
                     }
                     catch
                     {
-                        MessageBox.Show("Не вдалось запустити процес");
+                        MessageBox.Show("ГЌГҐ ГўГ¤Г Г«Г®Г±Гј Г§Г ГЇГіГ±ГІГЁГІГЁ ГЇГ°Г®Г¶ГҐГ±");
                     }
                 }
             }
